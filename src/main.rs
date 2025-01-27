@@ -8,7 +8,7 @@ pub mod wfa;
 use anyhow::{Ok, Result};
 use clap::Parser;
 use command_line::PalinArgs;
-use fasta_parsing::parse_fasta;
+use fasta_parsing::{parse_fasta, parse_fastq};
 use output::write_file;
 use run_algorithm::run;
 use std::time::Instant;
@@ -17,9 +17,11 @@ fn main() -> Result<()> {
     let global_timer = Instant::now();
     
     let args = PalinArgs::parse();
-    let iterator = parse_fasta(&args)?;
-    let palins = run(&args, iterator)?;
+    let iterator = parse_fastq(&args)?;
 
+     
+    let palins = run(&args, iterator)?;
+    
     write_file(palins, &args.output_file)?;
 
     let elapsed = global_timer.elapsed();

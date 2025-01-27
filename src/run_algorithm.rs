@@ -3,15 +3,15 @@ use anyhow::{ensure, Result};
 
 use crate::{
     command_line::{
-        AlgorithmType::FixedMismatch, AlgorithmType::Wfa, FixedArgs, PalinArgs, WfaArgs,
+        AlgorithmType::{FixedMismatch, Wfa}, FixedArgs, PalinArgs, WfaArgs,
     },
     exact_matches::fixed_match,
-    fasta_parsing::FastaIterator,
+    fasta_parsing::{Fasta, FastaIterator, FastqIterator},
     output::PalindromeData,
     wfa::wfa_palins,
 };
 
-pub fn run<T: Read>(args: &PalinArgs, iterator: FastaIterator<T>) -> Result<Vec<PalindromeData>> {
+pub fn run<T: Read>(args: &PalinArgs, iterator: Box<dyn Iterator<Item = Fasta>>) -> Result<Vec<PalindromeData>> {
     let mut palins = Vec::new();
     match &args.command {
         Wfa(cmds) => run_wfa(args, cmds, iterator, &mut palins)?,
@@ -23,7 +23,7 @@ pub fn run<T: Read>(args: &PalinArgs, iterator: FastaIterator<T>) -> Result<Vec<
 pub fn run_wfa<T: Read>(
     args: &PalinArgs,
     wfa_args: &WfaArgs,
-    iterator: FastaIterator<T>,
+    iterator: Box<dyn Iterator<Item = Fasta>>,
     output: &mut Vec<PalindromeData>,
 ) -> Result<()> {
     
@@ -51,7 +51,7 @@ pub fn run_wfa<T: Read>(
 pub fn run_fixed_match<T: Read>(
     args: &PalinArgs,
     cmds: &FixedArgs,
-    iterator: FastaIterator<T>,
+    iterator: Box<dyn Iterator<Item = Fasta>>,
     output: &mut Vec<PalindromeData>,
 ) -> Result<()> {
     let mut palins = Vec::new();

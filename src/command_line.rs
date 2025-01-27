@@ -6,7 +6,7 @@ use clap::{command, ArgGroup, Args, Parser, Subcommand};
 #[command(version, about)]
 #[command(group = ArgGroup::new("file_type")
     .required(true)
-    .args(&["fa", "fgz"]))]
+    .args(&["fa", "fgz", "fq"]))]
 pub struct PalinArgs {
     #[arg(short = 'l', long, default_value_t = 10)]
     ///Minimum palindrome arm length
@@ -20,13 +20,17 @@ pub struct PalinArgs {
     ///Input file path
     pub input_file: String,
 
-    /// Indicates the input file should be read in Fasta format
+    /// Indicates the input file should be read in FASTA format
     #[arg(long)]
     pub fa: bool,
 
-    /// Indicates the input file should be read in compressed fasta gzip format
+    /// Indicates the input file should be read in compressed FASTA gzip format
     #[arg(long)]
     pub fgz: bool,
+
+    ///Indicates the input file should be read in FASTQ format
+    #[arg(long)]
+    pub fq: bool,
 
     #[arg(short, long = "output", default_value = "output.tsv")]
     ///Output file path. File does not need to exist.
