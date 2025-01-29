@@ -4,11 +4,12 @@ pub mod fasta_parsing;
 pub mod output;
 pub mod run_algorithm;
 pub mod wfa;
+mod adapters;
 
 use anyhow::{Ok, Result};
 use clap::Parser;
 use command_line::PalinArgs;
-use fasta_parsing::{parse_fasta, parse_fastq};
+use fasta_parsing::parse;
 use output::write_file;
 use run_algorithm::run;
 use std::time::Instant;
@@ -17,17 +18,17 @@ fn main() -> Result<()> {
     let global_timer = Instant::now();
     
     let args = PalinArgs::parse();
-    let iterator = parse_fastq(&args)?;
+    let iterator = parse(&args)?;
 
-     
     let palins = run(&args, iterator)?;
     
     write_file(palins, &args.output_file)?;
 
     let elapsed = global_timer.elapsed();
+    
     println!("Total elapsed time: {:.2?}", elapsed);
     println!();
     println!("---Settings---\n{}", args);
-    
+
     Ok(())
 }

@@ -1,17 +1,19 @@
-use std::io::Read;
-use anyhow::{ensure, Result};
+use std::fs::File;
+
+use anyhow::{anyhow, ensure, Result};
 
 use crate::{
     command_line::{
-        AlgorithmType::{FixedMismatch, Wfa}, FixedArgs, PalinArgs, WfaArgs,
+        AlgorithmType::{FixedMismatch, Wfa}, FixedArgs, PalinArgs, WfaArgs
     },
+    adapters::align,
     exact_matches::fixed_match,
-    fasta_parsing::{Fasta, FastaIterator, FastqIterator},
+    fasta_parsing::Fasta,
     output::PalindromeData,
     wfa::wfa_palins,
 };
 
-pub fn run<T: Read>(args: &PalinArgs, iterator: Box<dyn Iterator<Item = Fasta>>) -> Result<Vec<PalindromeData>> {
+pub fn run(args: &PalinArgs, iterator: Box<dyn Iterator<Item = Result<Fasta>>>) -> Result<Vec<PalindromeData>> {
     let mut palins = Vec::new();
     match &args.command {
         Wfa(cmds) => run_wfa(args, cmds, iterator, &mut palins)?,
@@ -20,10 +22,31 @@ pub fn run<T: Read>(args: &PalinArgs, iterator: Box<dyn Iterator<Item = Fasta>>)
     Ok(palins)
 }
 
-pub fn run_wfa<T: Read>(
+pub fn write_output(args: &PalinArgs){
+    
+}
+
+pub fn run_adapters(file_path: String, iterator: Box<dyn Iterator<Item = Result<Fasta>>>) -> Result<()> {
+    let adapter_file = File::open(file_path);
+    let adapter_file = match adapter_file {
+        Result::Ok(adapter_file) => adapter_file,
+        Err(err) => return Err(anyhow!("Invalid file format: {err}"))
+    };
+    let mut adapters: Vec<Fasta> = Vec::new();
+    for line in iterator {
+        let line = match line{
+            Result::Ok(line) => line,
+            Err(err) => return Err(anyhow!("Invalid file format: {err}"))
+        };
+        align(line, &adapter_file, &mut adapters)?
+    }
+    Ok(())
+}
+
+pub fn run_wfa(
     args: &PalinArgs,
     wfa_args: &WfaArgs,
-    iterator: Box<dyn Iterator<Item = Fasta>>,
+    iterator: Box<dyn Iterator<Item = Result<Fasta>>>,
     output: &mut Vec<PalindromeData>,
 ) -> Result<()> {
     
@@ -40,7 +63,8 @@ pub fn run_wfa<T: Read>(
 
     let mut palins = Vec::new();
     for line in iterator {
-        wfa_palins(line?, output, args, wfa_args)?;
+        let line = line?;
+        wfa_palins(line, output, args, wfa_args)?;
         output.append(&mut palins);
         palins.clear();
     }
@@ -48,15 +72,16 @@ pub fn run_wfa<T: Read>(
     Ok(())
 }
 
-pub fn run_fixed_match<T: Read>(
+pub fn run_fixed_match(
     args: &PalinArgs,
     cmds: &FixedArgs,
-    iterator: Box<dyn Iterator<Item = Fasta>>,
+    iterator: Box<dyn Iterator<Item = Result<Fasta>>>,
     output: &mut Vec<PalindromeData>,
 ) -> Result<()> {
     let mut palins = Vec::new();
     for line in iterator {
-        fixed_match(line?, output, args, cmds)?;
+        let line = line?;
+        fixed_match(line, output, args, cmds)?;
         output.append(&mut palins);
         palins.clear();
     }

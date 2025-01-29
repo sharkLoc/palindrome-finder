@@ -85,16 +85,14 @@ impl<T: Read> Iterator for FastqIterator<T>{
                 Err(err) => return Some(Err(anyhow!("Invalid line/file format: {err}")))
             };
 
-            if self.counter == 0 {
-                //print!("{}", line);
+            if self.counter == 0 && line.starts_with('@'){
+                self.counter += 1;
                 let mut name: String = line.strip_prefix('@').unwrap().to_owned();
                 if seq.is_empty(){
                     name.clone_into(&mut self.curr_name);
-                    self.counter += 1;
                     continue;
                 }
                 mem::swap(&mut name, &mut self.curr_name);
-                self.counter += 1;
                 return Some(Ok(Fasta {
                     name, 
                     sequence: seq
@@ -110,7 +108,7 @@ impl<T: Read> Iterator for FastqIterator<T>{
                 self.counter = 0;
                 continue
             } else {
-                return Some(Err(anyhow!("Invalid fasta format")));
+                return Some(Err(anyhow!("Invalid fastq format")));
             }
         }
         if seq.is_empty() {
@@ -171,6 +169,15 @@ impl<T: Read> FastaIterator<T> {
             lines_reader: bufreader.lines(),
             curr_name: String::new()
         }
+    }
+}
+
+pub fn parse(args: &PalinArgs) -> Result<Box<dyn Iterator<Item = Result<Fasta>>>>{
+    let reader = get_reader(args)?;
+    if args.fq {
+        Ok(Box::new(FastqIterator::new(reader)))
+    } else {
+        Ok(Box::new(FastaIterator::new(reader)))
     }
 }
 

@@ -36,6 +36,12 @@ pub struct PalinArgs {
     ///Output file path. File does not need to exist.
     pub output_file: String,
 
+    #[arg(long, requires = "adapters_file_path")]
+    pub adapters: bool,
+
+    #[arg(long, requires = "adapters")]
+    pub adapters_file_path: String,
+
     ///Decide which algorithm should be used
     #[clap(subcommand)]
     pub command: AlgorithmType,
@@ -46,11 +52,12 @@ pub enum AlgorithmType {
     ///Use fast WFA algorithm, allows mismatches and indels and uses more complex pruning
     Wfa(WfaArgs),
     ///Use fixed-mismatches algorithm, only allows fixed number mismatches and no indels
-    FixedMismatch(FixedArgs),
+    FixedMismatch(FixedArgs), 
 }
 
 #[derive(Debug, Args)]
 pub struct FixedArgs{
+    ///Max number of mismatches
     #[arg(short = 'm', long = "mismatches", default_value_t = 4)]
     pub mismatches: u32,
 }
@@ -98,7 +105,7 @@ impl Display for AlgorithmType{
                     f,
                     "Mismatches allowed: {}",
                     cmds.mismatches
-                ),
+            ),
         }
         
     }
