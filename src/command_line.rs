@@ -8,14 +8,6 @@ use clap::{command, ArgGroup, Args, Parser, Subcommand};
     .required(true)
     .args(&["fa", "fgz", "fq"]))]
 pub struct PalinArgs {
-    #[arg(short = 'l', long, default_value_t = 10)]
-    ///Minimum palindrome arm length
-    pub len: usize,
-
-    #[arg(short, long = "gap", default_value_t = 3)]
-    ///Maximum gap length in a palindrome
-    pub gap_len: usize,
-
     #[arg(short, long = "input", required = true)]
     ///Input file path
     pub input_file: String,
@@ -32,15 +24,9 @@ pub struct PalinArgs {
     #[arg(long)]
     pub fq: bool,
 
-    #[arg(short, long = "output", default_value = "output.tsv")]
+    #[arg(short, long = "output")]
     ///Output file path. File does not need to exist.
     pub output_file: String,
-
-    #[arg(long, requires = "adapters_file_path")]
-    pub adapters: bool,
-
-    #[arg(long, requires = "adapters")]
-    pub adapters_file_path: String,
 
     ///Decide which algorithm should be used
     #[clap(subcommand)]
@@ -53,10 +39,28 @@ pub enum AlgorithmType {
     Wfa(WfaArgs),
     ///Use fixed-mismatches algorithm, only allows fixed number mismatches and no indels
     FixedMismatch(FixedArgs), 
+    Adapters(AdapterArgs)
+}
+
+#[derive(Debug, Args)]
+pub struct AdapterArgs{
+    #[arg(long)]
+    pub adapters_file_path: String,
+    
+    #[arg(short = 'l', long)]
+    pub largest_adapter_len: usize
+
 }
 
 #[derive(Debug, Args)]
 pub struct FixedArgs{
+    #[arg(short = 'l', long, default_value_t = 10)]
+    ///Minimum palindrome arm length
+    pub len: usize,
+
+    #[arg(short, long = "gap", default_value_t = 3)]
+    ///Maximum gap length in a palindrome
+    pub gap_len: usize,
     ///Max number of mismatches
     #[arg(short = 'm', long = "mismatches", default_value_t = 4)]
     pub mismatches: u32,
@@ -64,6 +68,14 @@ pub struct FixedArgs{
 
 #[derive(Debug, Args)]
 pub struct WfaArgs {
+    #[arg(short = 'l', long, default_value_t = 10)]
+    ///Minimum palindrome arm length
+    pub len: usize,
+
+    #[arg(short, long = "gap", default_value_t = 3)]
+    ///Maximum gap length in a palindrome
+    pub gap_len: usize,
+    
     ///Bonus for matches in scoring, must be positive
     #[arg(short = 'b', long = "match", default_value_t = 1.0)]
     pub match_bonus: f32,
@@ -85,8 +97,8 @@ impl Display for PalinArgs{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Min length: {}\nMax gap length: {}\n{}",
-            self.len, self.gap_len, self.command
+            "{}",
+            self.command
         )
     }
 }
@@ -97,15 +109,16 @@ impl Display for AlgorithmType{
             AlgorithmType::Wfa(cmds) => 
                 write!(
                     f,
-                    "Match bonus: {}\nMismatch penalty: {}\nX-drop: {}\nMax mismatch proportion: {}",
-                    cmds.match_bonus, cmds.mismatch_penalty, cmds.x_drop, cmds.mismatch_proportion
+                    "Min length: {}\nMax gap length: {}\nMatch bonus: {}\nMismatch penalty: {}\nX-drop: {}\nMax mismatch proportion: {}",
+                    cmds.len, cmds.gap_len, cmds.match_bonus, cmds.mismatch_penalty, cmds.x_drop, cmds.mismatch_proportion
             ),
             AlgorithmType::FixedMismatch(cmds) => 
                 write!(
                     f,
-                    "Mismatches allowed: {}",
-                    cmds.mismatches
+                    "Min length: {}\nMax gap length: {}\nMismatches allowed: {}",
+                    cmds.len, cmds.gap_len, cmds.mismatches
             ),
+            AlgorithmType::Adapters(_cmds) => Ok(())
         }
         
     }

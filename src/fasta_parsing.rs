@@ -92,6 +92,7 @@ impl<T: Read> Iterator for FastqIterator<T>{
                     name.clone_into(&mut self.curr_name);
                     continue;
                 }
+                
                 mem::swap(&mut name, &mut self.curr_name);
                 return Some(Ok(Fasta {
                     name, 
@@ -179,16 +180,6 @@ pub fn parse(args: &PalinArgs) -> Result<Box<dyn Iterator<Item = Result<Fasta>>>
     } else {
         Ok(Box::new(FastaIterator::new(reader)))
     }
-}
-
-pub fn parse_fasta(args: &PalinArgs) -> Result<FastaIterator<Box<dyn Read>>> {
-    let reader = get_reader(args)?;
-    Ok(FastaIterator::new(reader))
-}
-
-pub fn parse_fastq(args: &PalinArgs) -> Result<FastqIterator<Box<dyn Read>>>{
-    let reader = get_reader(args)?;
-    Ok(FastqIterator::new(reader))
 }
 
 pub fn get_reader(args: &PalinArgs) -> Result<BufReader<Box<dyn Read>>> {

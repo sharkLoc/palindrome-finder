@@ -7,4 +7,4 @@ edition = "2021"
 clap = { version = "4.5.13", features = ["cargo", "derive"] }
 anyhow = "1.0"
 flate2 = "1.0.30"
-block-aligner = { version = "^0.2.0", features = ["simd_avx2"] }
+block-aligner = { version = "0.5.1", features = ["simd_avx2"] }

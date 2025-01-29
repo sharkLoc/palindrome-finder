@@ -6,6 +6,8 @@ use std::{
 
 use anyhow::Result;
 
+use crate::adapters::Adapter;
+
 pub const BUFF_SIZE: usize = 1 << 20;
 
 #[derive(Debug)]
@@ -60,7 +62,8 @@ impl fmt::Display for PalindromeData {
     }
 }
 
-pub fn write_file(palins: Vec<PalindromeData>, file_name: &str) -> Result<()> {
+
+pub fn write_palins(palins: &mut Vec<PalindromeData>, file_name: &str) -> Result<()> {
     let output = File::create(file_name)?;
     let mut writer = BufWriter::with_capacity(BUFF_SIZE, output);
 
@@ -73,5 +76,27 @@ pub fn write_file(palins: Vec<PalindromeData>, file_name: &str) -> Result<()> {
     }
     writer.flush()?;
 
+    Ok(())
+}
+
+pub fn write_adapters(adapters: &mut Vec<Adapter>, file_name: &str) -> Result<()> {
+    let output = File::create(file_name)?;
+    let mut writer = BufWriter::with_capacity(BUFF_SIZE, output);
+    let _ = writeln!(
+        writer,
+        "Ref name\tQuery name\tCigar\tScore\tQuery index\tRef index\n"
+    );
+    for adapter in adapters{
+        let result = adapter.get_result();
+        let _ = writeln!(writer, "{}\t{}\t{}\t{}\t{}\t{}", 
+        adapter.get_name(), 
+        adapter.get_ref(),  
+        adapter.get_seq(),
+        result.score,
+        result.query_idx,
+        result.reference_idx,
+    );
+    }
+    writer.flush()?;
     Ok(())
 }

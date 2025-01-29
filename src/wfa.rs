@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    command_line::{PalinArgs, WfaArgs},
+    command_line::WfaArgs,
     fasta_parsing::Fasta,
     output::PalindromeData,
 };
@@ -17,7 +17,6 @@ const SIZE: usize = 1000;
 pub fn wfa_palins(
     fasta: Fasta,
     output: &mut Vec<PalindromeData>,
-    args: &PalinArgs,
     wfa_args: &WfaArgs,
 ) -> Result<()> {
 
@@ -31,14 +30,14 @@ pub fn wfa_palins(
     let len = seq.len();
     let mut index = 0;
 
-    let mut wf = vec![0; max(SIZE, args.gap_len + 2)];
-    let mut wf_next = vec![0; max(SIZE, args.gap_len + 2)];
+    let mut wf = vec![0; max(SIZE, wfa_args.gap_len + 2)];
+    let mut wf_next = vec![0; max(SIZE, wfa_args.gap_len + 2)];
 
-    let first_wave = vec![0; args.gap_len + 2];
+    let first_wave = vec![0; wfa_args.gap_len + 2];
 
     while index <= len {
         let mut edit_dist = 0;
-        let mut wf_len = args.gap_len + 1;
+        let mut wf_len = wfa_args.gap_len + 1;
 
         let mut max_index = 0;
         let mut max_score = 0.0;
@@ -53,7 +52,7 @@ pub fn wfa_palins(
             for i in 0..wf_len {
 
                 //Extend wave along the matches
-                let (mut x, mut y) = get_xy(wf_len, i, wf[i], args.gap_len);
+                let (mut x, mut y) = get_xy(wf_len, i, wf[i], wfa_args.gap_len);
                 x += index;
                 let counter = extend_wave(x, y, index, bytes_seq)?; //Using bytes_seq for fast complement checks
 
@@ -93,11 +92,11 @@ pub fn wfa_palins(
 
         let mut increment = 1;
 
-        let (x, y) = get_xy(wf_len, max_index, wf[max_index], args.gap_len);
+        let (x, y) = get_xy(wf_len, max_index, wf[max_index], wfa_args.gap_len);
         let palin = &seq[index - y..index + x];
         let gap = y - wf[max_index];
 
-        if x >= args.len {
+        if x >= wfa_args.len {
             let palin = PalindromeData::new(
                 (index - y) as u32,
                 (index + x - 1) as u32,

@@ -1,90 +1,44 @@
-use std::fs::File;
 
-use anyhow::{anyhow, ensure, Result};
+use anyhow::Result;
 
 use crate::{
-    command_line::{
-        AlgorithmType::{FixedMismatch, Wfa}, FixedArgs, PalinArgs, WfaArgs
-    },
-    adapters::align,
-    exact_matches::fixed_match,
-    fasta_parsing::Fasta,
-    output::PalindromeData,
-    wfa::wfa_palins,
+    adapters::align_adapters, command_line::{
+        AdapterArgs, AlgorithmType::{FixedMismatch, Wfa, Adapters}, PalinArgs
+    }, exact_matches::fixed_match, fasta_parsing::{parse, Fasta}, output::{write_adapters, write_palins, PalindromeData}, wfa::wfa_palins
 };
 
-pub fn run(args: &PalinArgs, iterator: Box<dyn Iterator<Item = Result<Fasta>>>) -> Result<Vec<PalindromeData>> {
-    let mut palins = Vec::new();
+pub fn run(args: &PalinArgs) -> Result<()> {
+    let iterator = parse(args)?;
+    let output_file = &args.output_file;
+    
     match &args.command {
-        Wfa(cmds) => run_wfa(args, cmds, iterator, &mut palins)?,
-        FixedMismatch(cmds) => run_fixed_match(args, cmds, iterator, &mut palins)?,
+        Wfa(cmds) => run_algorithm(iterator, output_file, |fasta, palins| wfa_palins(fasta, palins, cmds))?,
+        FixedMismatch(cmds) => run_algorithm(iterator, output_file, |fasta, palins| fixed_match(fasta, palins, cmds))?,
+        Adapters(cmds) => run_adapters(cmds, iterator, output_file)?,
     }
-    Ok(palins)
-}
-
-pub fn write_output(args: &PalinArgs){
     
-}
-
-pub fn run_adapters(file_path: String, iterator: Box<dyn Iterator<Item = Result<Fasta>>>) -> Result<()> {
-    let adapter_file = File::open(file_path);
-    let adapter_file = match adapter_file {
-        Result::Ok(adapter_file) => adapter_file,
-        Err(err) => return Err(anyhow!("Invalid file format: {err}"))
-    };
-    let mut adapters: Vec<Fasta> = Vec::new();
-    for line in iterator {
-        let line = match line{
-            Result::Ok(line) => line,
-            Err(err) => return Err(anyhow!("Invalid file format: {err}"))
-        };
-        align(line, &adapter_file, &mut adapters)?
-    }
     Ok(())
 }
 
-pub fn run_wfa(
-    args: &PalinArgs,
-    wfa_args: &WfaArgs,
-    iterator: Box<dyn Iterator<Item = Result<Fasta>>>,
-    output: &mut Vec<PalindromeData>,
-) -> Result<()> {
-    
-    ensure!(wfa_args.match_bonus > 0.0, "Match bonus not positive");
-    ensure!(
-        wfa_args.mismatch_penalty > 0.0,
-        "Mismatch penalty not positive"
-    );
-    ensure!(
-        0.0 < wfa_args.mismatch_proportion && wfa_args.mismatch_proportion < 1.0,
-        "Mismatch-length ratio not between 0 and 1"
-    );
-    ensure!(wfa_args.x_drop > 0.0, "X-drop not positive");
-
-    let mut palins = Vec::new();
-    for line in iterator {
-        let line = line?;
-        wfa_palins(line, output, args, wfa_args)?;
-        output.append(&mut palins);
-        palins.clear();
+fn run_adapters(cmds: &AdapterArgs, iterator: Box<dyn Iterator<Item = Result<Fasta>>>, output_file: &str) -> Result<()> {
+    let mut adapters = Vec::new();
+    for fasta in iterator {
+        align_adapters(fasta?, cmds, &mut adapters)?;
     }
-
+    write_adapters(&mut adapters, output_file)?;
     Ok(())
 }
 
-pub fn run_fixed_match(
-    args: &PalinArgs,
-    cmds: &FixedArgs,
-    iterator: Box<dyn Iterator<Item = Result<Fasta>>>,
-    output: &mut Vec<PalindromeData>,
-) -> Result<()> {
+fn run_algorithm<F>(iterator: Box<dyn Iterator<Item = Result<Fasta>>>, output_file: &str, algo: F) -> Result<()>
+where
+    F: Fn(Fasta, &mut Vec<PalindromeData>) -> Result<()>,
+{
     let mut palins = Vec::new();
-    for line in iterator {
-        let line = line?;
-        fixed_match(line, output, args, cmds)?;
-        output.append(&mut palins);
-        palins.clear();
+    for fasta in iterator {
+        algo(fasta?, &mut palins)?;
     }
+
+    write_palins(&mut palins, output_file)?;
 
     Ok(())
 }

@@ -9,8 +9,6 @@ mod adapters;
 use anyhow::{Ok, Result};
 use clap::Parser;
 use command_line::PalinArgs;
-use fasta_parsing::parse;
-use output::write_file;
 use run_algorithm::run;
 use std::time::Instant;
 
@@ -18,12 +16,9 @@ fn main() -> Result<()> {
     let global_timer = Instant::now();
     
     let args = PalinArgs::parse();
-    let iterator = parse(&args)?;
 
-    let palins = run(&args, iterator)?;
+    run(&args)?;
     
-    write_file(palins, &args.output_file)?;
-
     let elapsed = global_timer.elapsed();
     
     println!("Total elapsed time: {:.2?}", elapsed);

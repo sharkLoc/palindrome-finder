@@ -1,7 +1,7 @@
 use anyhow::{bail, ensure, Ok, Result};
 
 use crate::{
-    command_line::{FixedArgs, PalinArgs},
+    command_line::FixedArgs,
     fasta_parsing::Fasta,
     output::PalindromeData,
 };
@@ -12,7 +12,6 @@ pub static GAP_LENGTH: u32 = 2;
 pub fn fixed_match(
     fasta: Fasta,
     output: &mut Vec<PalindromeData>,
-    args: &PalinArgs,
     cmds: &FixedArgs,
 ) -> Result<()> {
     let seq = fasta.get_sequence();
@@ -22,10 +21,10 @@ pub fn fixed_match(
         let mut j = 1;
         let mut increment = 1;
 
-        while i >= j && j <= (args.gap_len + 1) as u32 {
+        while i >= j && j <= (cmds.gap_len + 1) as u32 {
             
             let length = count_palindrome(i, i + j, seq, cmds.mismatches)?;
-            if length >= args.len as u32 {
+            if length >= cmds.len as u32 {
                 let palin = PalindromeData::new(
                     i + 1 - length,
                     i + length + j - 1,
