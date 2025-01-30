@@ -86,4 +86,37 @@ pub fn align_adapters(sequence: Fasta, cmds: &AdapterArgs, output: &mut Vec<Adap
     Ok(())
 }
 
+fn remove_t(sequence: Fasta) -> Fasta{
+    let gaps = Gaps {
+        open: -2,
+        extend: -1,
+    };
+    let seq = sequence.get_sequence();
+    let seq_first = &seq[0..=300];
+    let poly_t = "TTTTTTTTTTTTTTTTTTTTTTTT";
+    let min_block_size = 32;
+    let max_block_size = 256;
+    
+    let read_padded = PaddedBytes::from_bytes::<NucMatrix>(seq_first.as_bytes(), max_block_size);
+    let polyt_padded = PaddedBytes::from_bytes::<NucMatrix>(poly_t.as_bytes(), max_block_size);
+    let mut local = Block::<false, false, false, true, true>::new(50, 300, max_block_size);
+    
+    local.align(
+        &polyt_padded, 
+        &read_padded, 
+        &NW1, 
+        gaps, 
+        min_block_size..=max_block_size, 
+        0
+    );
+    let res = local.res();
+    if res.score >= (0.8*(poly_t.len() as f32)) as i32 {
+        Fasta::new(
+            sequence.get_name().to_owned(),
+            seq[res.reference_idx..].to_owned()
+        );
+    }
+    sequence
+}
+
 
