@@ -49,6 +49,9 @@ impl Fasta {
     pub fn get_name(&self) -> &str {
         &self.name
     }
+    pub fn set_sequence(&mut self, seq: String){
+        self.sequence = seq;
+    }
 }
 
 #[derive(Debug)]

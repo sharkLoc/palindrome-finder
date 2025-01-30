@@ -48,7 +48,10 @@ pub struct AdapterArgs{
     pub adapters_file_path: String,
     
     #[arg(short = 'l', long)]
-    pub largest_adapter_len: usize
+    pub largest_adapter_len: usize,
+
+    #[arg(long)]
+    pub remove_t: bool
 
 }
 

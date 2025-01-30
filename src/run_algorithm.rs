@@ -23,7 +23,7 @@ pub fn run(args: &PalinArgs) -> Result<()> {
 fn run_adapters(cmds: &AdapterArgs, iterator: Box<dyn Iterator<Item = Result<Fasta>>>, output_file: &str) -> Result<()> {
     let mut adapters = Vec::new();
     for fasta in iterator {
-        align_adapters(fasta?, cmds, &mut adapters)?;
+        align_adapters(&mut fasta?, cmds, &mut adapters)?;
     }
     write_adapters(&mut adapters, output_file)?;
     Ok(())
