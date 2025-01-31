@@ -127,7 +127,7 @@ fn sequence_to_bytes(seq: &mut [u8]) -> Result<()> {
             84 | 116 => 253, // T, t
             67 | 99 => 3,    // C, c
             71 | 103 => 252, // G, g
-            _ => bail!("Invalid fasta format"),
+            _ => bail!("Not a base pair - check format"),
         };
     }
     Ok(())

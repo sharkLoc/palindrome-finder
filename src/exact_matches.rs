@@ -82,7 +82,7 @@ pub fn get_complement(bp: &str) -> Result<&str> {
         "T" => "A",
         "C" => "G",
         "G" => "C",
-        _ => bail!("Invalid fasta format"),
+        _ => bail!("Not a base pair - check format"),
     };
     Ok(value)
 }

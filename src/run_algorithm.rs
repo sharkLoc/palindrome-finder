@@ -3,17 +3,17 @@ use anyhow::Result;
 
 use crate::{
     adapters::align_adapters, command_line::{
-        AdapterArgs, AlgorithmType::{FixedMismatch, Wfa, Adapters}, PalinArgs
+        AdapterArgs, AlgorithmType::{ExactMatch, Wfa, Adapters}, PalinArgs
     }, exact_matches::fixed_match, fasta_parsing::{parse, Fasta}, output::{write_adapters, write_palins, PalindromeData}, wfa::wfa_palins
 };
 
 pub fn run(args: &PalinArgs) -> Result<()> {
     let iterator = parse(args)?;
-    let output_file = &args.output_file;
+    let output_file = &args.mode.output_file();
     
-    match &args.command {
+    match &args.mode {
         Wfa(cmds) => run_algorithm(iterator, output_file, |fasta, palins| wfa_palins(fasta, palins, cmds))?,
-        FixedMismatch(cmds) => run_algorithm(iterator, output_file, |fasta, palins| fixed_match(fasta, palins, cmds))?,
+        ExactMatch(cmds) => run_algorithm(iterator, output_file, |fasta, palins| fixed_match(fasta, palins, cmds))?,
         Adapters(cmds) => run_adapters(cmds, iterator, output_file)?,
     }
     

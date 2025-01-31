@@ -1,6 +1,6 @@
-use std::{fs::File, io::BufReader};
+use std::{cmp::min, fs::File, io::BufReader};
 
-use anyhow::{Ok, Result};
+use anyhow::{anyhow, bail, Ok, Result};
 use block_aligner::{
     cigar::Cigar, percent_len, scan_block::{AlignResult, Block, PaddedBytes}, scores::{Gaps, NucMatrix, NW1}
 };
@@ -37,7 +37,9 @@ impl Adapter {
     }
 }
 
-pub fn align_adapters(sequence: &mut Fasta, cmds: &AdapterArgs, output: &mut Vec<Adapter>) -> Result<()> {
+//Aligns adapter sequence against ref sequence
+pub fn align_adapters(fasta: &mut Fasta, cmds: &AdapterArgs, output: &mut Vec<Adapter>) -> Result<()> {
+    
     let gaps = Gaps {
         open: -2,
         extend: -1,
@@ -46,18 +48,18 @@ pub fn align_adapters(sequence: &mut Fasta, cmds: &AdapterArgs, output: &mut Vec
     let mut offset = 0;
 
     if cmds.remove_t{
-        let t_res = remove_t(sequence);
+        let t_res = remove_t(fasta, cmds.score_cutoff)?;
         offset = match t_res {
             Some(t_res) => t_res.reference_idx,
             None => 0
         };
     }
     
-    let seq = sequence.get_sequence();
+    let seq = fasta.get_sequence();
     let len = seq.len();
 
     let min_block_size: usize = percent_len(cmds.largest_adapter_len, 1.0);
-    let max_block_size: usize = 8*min_block_size;
+    let max_block_size: usize = 4*min_block_size;
 
     let adapter_file = File::open(&cmds.adapters_file_path)?;
 
@@ -69,7 +71,12 @@ pub fn align_adapters(sequence: &mut Fasta, cmds: &AdapterArgs, output: &mut Vec
 
     for line in iterator {
         let line = line?;
+        
         let adapter = line.get_sequence();
+
+        if cmds.largest_adapter_len < adapter.len(){
+            return Err(anyhow!("Largest adapter length not large enough"));
+        }
 
         let mut cigar = Cigar::new(min_block_size, len);
         
@@ -85,13 +92,13 @@ pub fn align_adapters(sequence: &mut Fasta, cmds: &AdapterArgs, output: &mut Vec
         );
 
         let res = local.res();
-        if res.score >= 11 {
+        if res.score >= cmds.score_cutoff {
             local.trace().cigar_eq(&adapter_padded, &read_padded, res.query_idx, res.reference_idx, &mut cigar);
 
             let res_offset = AlignResult { score: res.score, query_idx: res.query_idx, reference_idx: res.reference_idx+offset };
             
             let result = Adapter::new(
-                sequence.get_name().split_once(' ').unwrap().0.to_owned(),
+                fasta.get_name().split_once(' ').unwrap().0.to_owned(),
                 line.get_name().to_owned(),
                 cigar.to_string(),
                 res_offset
@@ -102,13 +109,15 @@ pub fn align_adapters(sequence: &mut Fasta, cmds: &AdapterArgs, output: &mut Vec
     Ok(())
 }
 
-fn remove_t(sequence: &mut Fasta) -> Option<AlignResult>{
+
+//Removes poly t at start or poly a at end and everything before that
+fn remove_t(fasta: &mut Fasta, smallest: i32) -> Result<Option<AlignResult>>{
     let gaps = Gaps {
         open: -2,
         extend: -1,
     };
-    let seq = sequence.get_sequence().to_owned();
-    let seq_first = &seq[0..=300];
+    let seq = fasta.get_sequence().to_owned();
+    let seq_first = &seq[0..min(300, seq.len())];
 
     let poly_t = 
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT";
@@ -135,15 +144,16 @@ fn remove_t(sequence: &mut Fasta) -> Option<AlignResult>{
 
 
     let res_first = local.res();
-    println!("{:?}", res_first);
-    if res_first.score >= 11 {
-        sequence.set_sequence(seq[res_first.reference_idx..].to_owned());
-        return Some(res_first)
+
+    if res_first.score >= smallest {
+        fasta.set_sequence(seq[res_first.reference_idx..].to_owned());
+        return Ok(Some(res_first))
+    
     } else {
 
-        let seq_new = sequence.get_sequence().to_owned();
-        let seq_reversed = reverse_complement(&seq_new);
-        let seq_rev_first = &seq_reversed[..300];
+        let seq_new = fasta.get_sequence().to_owned();
+        let seq_reversed = reverse_complement(&seq_new)?;
+        let seq_rev_first = &seq_reversed[..min(seq_new.len(),300)];
 
         let read_padded_last = PaddedBytes::from_str::<NucMatrix>(seq_rev_first, max_block_size);
 
@@ -159,21 +169,27 @@ fn remove_t(sequence: &mut Fasta) -> Option<AlignResult>{
 
         let res_last = local.res();
 
-        if res_last.score >= 11 {
-            sequence.set_sequence(seq_rev_first[res_last.reference_idx..].to_owned());
-            return Some(res_last)
+        if res_last.score >= smallest {
+            fasta.set_sequence(seq_rev_first[res_last.reference_idx..].to_owned());
+            return Ok(Some(res_last))
         }
     }
-    None
+    Ok(None)
 }
 
-fn reverse_complement(seq: &str) -> String {
+fn reverse_complement(seq: &str) -> Result<String> {
     seq.bytes()
         .rev()
         .map(|b| match b {
-            b'A' => 'T', b'T' => 'A', b'C' => 'G', b'G' => 'C',
-            b'a' => 't', b't' => 'a', b'c' => 'g', b'g' => 'c',
-            _ => b as char,
+            b'A' => Ok('T'), 
+            b'T' => Ok('A'), 
+            b'C' => Ok('G'), 
+            b'G' => Ok('C'),
+            b'a' => Ok('t'), 
+            b't' => Ok('a'), 
+            b'c' => Ok('g'), 
+            b'g' => Ok('c'),
+            _ => bail!("Not a base pair - check format"),
         })
         .collect()
 }

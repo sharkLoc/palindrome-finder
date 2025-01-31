@@ -102,7 +102,7 @@ impl<T: Read> Iterator for FastqIterator<T>{
                     sequence: seq
                 }))
             } else if self.counter == 1{
-                seq += &line;
+                seq = line;
                 self.counter += 1;
                 continue
             } else if self.counter == 2{
@@ -178,7 +178,7 @@ impl<T: Read> FastaIterator<T> {
 
 pub fn parse(args: &PalinArgs) -> Result<Box<dyn Iterator<Item = Result<Fasta>>>>{
     let reader = get_reader(args)?;
-    if args.fq {
+    if args.mode.is_fq() {
         Ok(Box::new(FastqIterator::new(reader)))
     } else {
         Ok(Box::new(FastaIterator::new(reader)))
@@ -186,14 +186,15 @@ pub fn parse(args: &PalinArgs) -> Result<Box<dyn Iterator<Item = Result<Fasta>>>
 }
 
 pub fn get_reader(args: &PalinArgs) -> Result<BufReader<Box<dyn Read>>> {
-    let file = File::open(&args.input_file)?;
+    let cmd = &args.mode;
+    let file = File::open(cmd.input_file())?;
 
-    if args.fgz {
+    if cmd.is_fgz() || cmd.is_fqgz(){
         Ok(BufReader::with_capacity(
             BUFF_SIZE,
             Box::new(GzDecoder::new(file)),
         ))
-    } else if args.fa || args.fq{
+    } else if cmd.is_fa() || cmd.is_fq(){
         return Ok(BufReader::with_capacity(BUFF_SIZE, Box::new(file)));
     } else {
         bail!("Invalid file format input")
