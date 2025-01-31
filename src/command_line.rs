@@ -50,15 +50,15 @@ pub struct AdapterArgs{
     pub output_file: String,
 
     ///The file path for the list of adapter seqeuences. Must be fasta format
-    #[arg(long)]
+    #[arg(short, long)]
     pub adapters_file_path: String,
     
     ///The length of the longest adapter in the file
-    #[arg(short = 'l', long)]
-    pub largest_adapter_len: usize,
+    #[arg(short, long)]
+    pub longest_adapter: usize,
 
     ///The smallest alignment score for an adapter sequence to be outputted
-    #[arg(long)]
+    #[arg(short = 'c', long)]
     pub score_cutoff: i32,
 
     ///Enables removing  poly-t sequences at the start and all the sequences before.
@@ -140,18 +140,18 @@ pub struct WfaArgs {
 
     #[arg(short = 'l', long, default_value_t = 10)]
     ///Minimum palindrome arm length
-    pub len: usize,
+    pub min_length: usize,
 
     #[arg(short, long = "gap", default_value_t = 3)]
     ///Maximum gap length in a palindrome
     pub gap_len: usize,
     
     ///Bonus for matches in scoring, must be positive
-    #[arg(short = 'b', long = "match", default_value_t = 1.0)]
+    #[arg(short = 'b', long, default_value_t = 1.0)]
     pub match_bonus: f32,
 
     ///Penalty for mismatches in scoring, must be positive (since value is subtracted)
-    #[arg(short = 'p', long = "mismatch", default_value_t = 4.0)]
+    #[arg(short = 'p', long, default_value_t = 4.0)]
     pub mismatch_penalty: f32,
 
     ///Maximum score drop allowed before pruning
@@ -180,7 +180,7 @@ impl Display for AlgorithmType{
                 write!(
                     f,
                     "Min length: {}\nMax gap length: {}\nMatch bonus: {}\nMismatch penalty: {}\nX-drop: {}\nMax mismatch proportion: {}",
-                    cmds.len, cmds.gap_len, cmds.match_bonus, cmds.mismatch_penalty, cmds.x_drop, cmds.mismatch_proportion
+                    cmds.min_length, cmds.gap_len, cmds.match_bonus, cmds.mismatch_penalty, cmds.x_drop, cmds.mismatch_proportion
             ),
             AlgorithmType::ExactMatch(cmds) => 
                 write!(

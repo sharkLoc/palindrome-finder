@@ -69,7 +69,7 @@ pub fn write_palins(palins: &mut Vec<PalindromeData>, file_name: &str) -> Result
 
     let _ = writeln!(
         writer,
-        "Start\tEnd\tApprox Arm-Length\tApprox Gap\tLength\tMismatches\tSeq-name\tSequence\n"
+        "Start\tEnd\tArm-Length\tGap\tLength\tMismatches\tSeq-name\tSequence\n"
     );
     for palin in palins {
         let _ = writeln!(writer, "{}", palin);

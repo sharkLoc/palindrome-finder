@@ -58,7 +58,7 @@ pub fn align_adapters(fasta: &mut Fasta, cmds: &AdapterArgs, output: &mut Vec<Ad
     let seq = fasta.get_sequence();
     let len = seq.len();
 
-    let min_block_size: usize = percent_len(cmds.largest_adapter_len, 1.0);
+    let min_block_size: usize = percent_len(cmds.longest_adapter, 1.0);
     let max_block_size: usize = 4*min_block_size;
 
     let adapter_file = File::open(&cmds.adapters_file_path)?;
@@ -74,7 +74,7 @@ pub fn align_adapters(fasta: &mut Fasta, cmds: &AdapterArgs, output: &mut Vec<Ad
         
         let adapter = line.get_sequence();
 
-        if cmds.largest_adapter_len < adapter.len(){
+        if cmds.longest_adapter < adapter.len(){
             return Err(anyhow!("Largest adapter length not large enough"));
         }
 

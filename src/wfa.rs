@@ -96,7 +96,7 @@ pub fn wfa_palins(
         let palin = &seq[index - y..index + x];
         let gap = y - wf[max_index];
 
-        if x >= wfa_args.len {
+        if x >= wfa_args.min_length {
             let palin = PalindromeData::new(
                 (index - y) as u32,
                 (index + x - 1) as u32,
