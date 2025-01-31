@@ -56,7 +56,7 @@ Note that the arm and gap lengths are approximated
 This tool contains a few scripts for data analysis and processing. 
 
 ### Adapter script
-This is a script for aligning adapter sequences to help filter out bad nanopore reads which often contain adapter sequences in the middle of the read. It uses the [block-aligner](https://github.com/Daniel-Liu-c0deb0t/block-aligner) library to align a file of adapter sequences and identify them and their location.
+This is a script for aligning adapter sequences to help filter out bad nanopore reads which often contain adapter sequences in the middle. It uses the [block-aligner](https://github.com/Daniel-Liu-c0deb0t/block-aligner) library to align a file of adapter sequences and identify them and their location.
 
 It also allows the user to filter out real adapter sequences present at the beginning of the the read
 
