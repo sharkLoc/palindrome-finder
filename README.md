@@ -72,8 +72,8 @@ Run with `-h` for more details
 Three python scripts have been implemented for data analysis. 
 
 1. plot_graph -- Plots a graph with statistics from the output file
-2. print_statistic -- Prints a desired statistic
-3. filter_output -- Filters the output to only include certain palindromes
+2. print_statistic -- Prints a desired statistic, for example longest palindrome
+3. filter_output -- Filters the output to only include certain palindromes, for example repeat masking the outputq
 
 #### Example usage
 ```
