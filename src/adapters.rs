@@ -47,11 +47,12 @@ pub fn align_adapters(sequence: &mut Fasta, cmds: &AdapterArgs, output: &mut Vec
 
     if cmds.remove_t{
         let t_res = remove_t(sequence);
-        let offset = match t_res {
+        offset = match t_res {
             Some(t_res) => t_res.reference_idx,
             None => 0
         };
     }
+    
     let seq = sequence.get_sequence();
     let len = seq.len();
 
@@ -82,18 +83,21 @@ pub fn align_adapters(sequence: &mut Fasta, cmds: &AdapterArgs, output: &mut Vec
             min_block_size..=max_block_size,
             0,
         );
-        let res = local.res();
-        local.trace().cigar_eq(&adapter_padded, &read_padded, res.query_idx, res.reference_idx, &mut cigar);
 
-        let res_offset = AlignResult { score: res.score, query_idx: res.query_idx, reference_idx: res.reference_idx+offset };
-        
-        let result = Adapter::new(
-            sequence.get_name().split_once(' ').unwrap().0.to_owned(),
-            line.get_name().to_owned(),
-            cigar.to_string(),
-            res_offset
-        );
-        output.push(result);
+        let res = local.res();
+        if res.score >= 11 {
+            local.trace().cigar_eq(&adapter_padded, &read_padded, res.query_idx, res.reference_idx, &mut cigar);
+
+            let res_offset = AlignResult { score: res.score, query_idx: res.query_idx, reference_idx: res.reference_idx+offset };
+            
+            let result = Adapter::new(
+                sequence.get_name().split_once(' ').unwrap().0.to_owned(),
+                line.get_name().to_owned(),
+                cigar.to_string(),
+                res_offset
+            );
+            output.push(result);
+        }
     }
     Ok(())
 }
