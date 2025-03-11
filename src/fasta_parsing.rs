@@ -1,7 +1,7 @@
 use crate::command_line::PalinArgs;
 use crate::output::BUFF_SIZE;
 use anyhow::{anyhow, bail, Ok, Result};
-use flate2::read::GzDecoder;
+use flate2::read::MultiGzDecoder;
 use std::{
     fs::File,
     io::{BufRead, BufReader, Lines, Read},
@@ -192,7 +192,7 @@ pub fn get_reader(args: &PalinArgs) -> Result<BufReader<Box<dyn Read>>> {
     if cmd.is_fgz() || cmd.is_fqgz(){
         Ok(BufReader::with_capacity(
             BUFF_SIZE,
-            Box::new(GzDecoder::new(file)),
+            Box::new(MultiGzDecoder::new(file)),
         ))
     } else if cmd.is_fa() || cmd.is_fq(){
         return Ok(BufReader::with_capacity(BUFF_SIZE, Box::new(file)));
